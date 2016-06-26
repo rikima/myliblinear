@@ -1,5 +1,7 @@
 package de.bwaldvogel.liblinear;
 
+import com.rikima.ml.myliblinear.Evaluation;
+
 import static de.bwaldvogel.liblinear.Linear.atof;
 import static de.bwaldvogel.liblinear.Linear.atoi;
 
@@ -32,10 +34,11 @@ public class Train {
         double total_error = 0;
         double sumv = 0, sumy = 0, sumvv = 0, sumyy = 0, sumvy = 0;
         double[] target = new double[prob.l];
+        double[] scores = new double[prob.l];
 
         long start, stop;
         start = System.currentTimeMillis();
-        Linear.crossValidation(prob, param, nr_fold, target);
+        Linear.crossValidation(prob, param, nr_fold, target, scores);
         stop = System.currentTimeMillis();
         System.out.println("time: " + (stop - start) + " ms");
 
@@ -54,12 +57,17 @@ public class Train {
             System.out.printf("Cross Validation Squared correlation coefficient = %g%n", //
                 ((prob.l * sumvy - sumv * sumy) * (prob.l * sumvy - sumv * sumy)) / ((prob.l * sumvv - sumv * sumv) * (prob.l * sumyy - sumy * sumy)));
         } else {
+            Evaluation eval = new Evaluation();
             int total_correct = 0;
-            for (int i = 0; i < prob.l; i++)
+            for (int i = 0; i < prob.l; i++) {
                 if (target[i] == prob.y[i]) ++total_correct;
+                eval.setResult((int)prob.y[i], (int)target[i], scores[i]);
+            }
 
             System.out.printf("correct: %d%n", total_correct);
             System.out.printf("Cross Validation Accuracy = %g%%%n", 100.0 * total_correct / prob.l);
+
+            eval.printResult(String.format("%d - fold cv result", nr_fold));
         }
     }
 
